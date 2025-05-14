@@ -62,3 +62,4 @@ add_fuzz_target(libjpeg_turbo decompress.cc)
 add_fuzz_target(decompress_yuv decompress_yuv.cc)
 
 add_fuzz_target(transform transform.cc)
+add_fuzz_target(glilouHarness glilouHarness.cc)
