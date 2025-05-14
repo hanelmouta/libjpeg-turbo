@@ -1,8 +1,8 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <jpeglib.h>
 #include <setjmp.h>
-#include <stdint.h>
 #include <cstdint>
 
 struct my_error_mgr {
@@ -15,7 +15,7 @@ METHODDEF(void) my_error_exit(j_common_ptr cinfo) {
   longjmp(myerr->setjmp_buffer, 1);
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   struct jpeg_decompress_struct cinfo;
   struct my_error_mgr jerr;
 
