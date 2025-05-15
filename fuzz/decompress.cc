@@ -53,17 +53,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     jpeg_start_compress(&cinfo, TRUE);
 
     // Prepare a single 8x8 block of data
-    JBLOCK block;
-    for (int i = 0; i < DCTSIZE2; ++i) {
-        block[i] = data[i % size]; // Fill block with fuzzed data
+    JSAMPLE row[8];
+    JSAMPROW row_pointer[1];
+    for (int i = 0; i < 8; ++i) {
+        row[i] = data[i % size]; // Fill row with fuzzed data
     }
+    row_pointer[0] = row;
 
-    // Encode the block
-    JBLOCKROW block_row = &block;
-    JBLOCKARRAY block_array = &block_row;
-    JDIMENSION block_index = 0;
-    cinfo.comp_info[0].DCT_table = nullptr; // Ensure no quantization table is used
-    encode_one_block(&cinfo, block_array, block_index);
+    // Write the block (indirectly calls `encode_one_block`)
+    for (int i = 0; i < 8; ++i) {
+        jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    }
 
     // Finish compression
     jpeg_finish_compress(&cinfo);
