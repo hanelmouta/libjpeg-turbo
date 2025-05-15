@@ -4,6 +4,10 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted.
  */
+extern "C" {
+#include <jpeglib.h>
+#include <jtransform.h>
+}
 
 #include <turbojpeg.h>
 #include <stdlib.h>
