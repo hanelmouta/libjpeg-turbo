@@ -1,3 +1,5 @@
+#include "jchuff.h" 
+#include <cstring> 
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
