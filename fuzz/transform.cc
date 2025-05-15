@@ -1,5 +1,5 @@
-#include <turbojpeg.h>
-#include <stdlib.h>
+#include <jpeglib.h>   
+#include <turbojpeg.h> 
 #include <stdint.h>
 #include <string.h>
 
