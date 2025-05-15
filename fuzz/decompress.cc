@@ -4,6 +4,11 @@
 #include "jpeglib.h"  // Include the libjpeg-turbo header
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    if (size == 0) {
+        // On ignore les entrées vides, pas besoin d'aller plus loin
+        return 0;
+    }
+
     // Create a memory source manager for libjpeg
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
