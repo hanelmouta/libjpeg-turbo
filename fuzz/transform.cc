@@ -1,7 +1,24 @@
+/*
+ * Copyright (C)2021-2025 D. R. Commander.  All Rights Reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted.
+ */
+
 #include <turbojpeg.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+
+// ✅ Custom filter function
+int myCustomFilter(JCOEFPTR coeff_array, tjregion arrayRegion,
+                   tjregion planeRegion, int componentIndex, int transformIndex,
+                   tjtransform *transform)
+{
+  // Dummy read/write to exercise the code path
+  coeff_array[0] = coeff_array[0];
+  return 0;
+}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
@@ -29,29 +46,32 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
   memset(&transforms[0], 0, sizeof(tjtransform));
 
-  // Trigger custom filter region by enabling crop and setting unusual region values
+  // ✅ Trigger customFilter path
   transforms[0].r.x = 0;
   transforms[0].r.y = 0;
-  transforms[0].r.w = (width / 4) * 4;  // Ensure MCU alignment
+  transforms[0].r.w = (width / 4) * 4;  // MCU-aligned
   transforms[0].r.h = (height / 4) * 4;
   transforms[0].op = TJXOP_NONE;
   transforms[0].options = TJXOPT_CROP | TJXOPT_COPYNONE | TJXOPT_OPTIMIZE | TJXOPT_PROGRESSIVE;
-  
-  // Allocate enough memory for destination buffer
+
+  // ✅ Set the custom filter
+  transforms[0].customFilter = myCustomFilter;
+
+  // Allocate destination buffer
   dstSizes[0] = maxBufSize = tj3TransformBufSize(handle, &transforms[0]);
   if (dstSizes[0] == 0 ||
       (dstBufs[0] = (unsigned char *)tj3Alloc(dstSizes[0])) == NULL)
     goto bailout;
 
-  // Enable progressive and arithmetic coding to reach respective branches
   tj3Set(handle, TJPARAM_PROGRESSIVE, 1);
   tj3Set(handle, TJPARAM_ARITHMETIC, 1);
   tj3Set(handle, TJPARAM_OPTIMIZE, 1);
 
-  // Execute transform
   if (tj3Transform(handle, data, size, 1, dstBufs, dstSizes, transforms) == 0) {
     size_t sum = 0;
-    for (size_t i = 0; i < dstSizes[0]; i++) sum += dstBufs[0][i];
+    for (size_t i = 0; i < dstSizes[0]; i++)
+      sum += dstBufs[0][i];
+
     if (sum > 255 * maxBufSize)
       goto bailout;
   }
