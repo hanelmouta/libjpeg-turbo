@@ -1,8 +1,9 @@
-#include <turbojpeg.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <jpeglib.h>  
+#include <turbojpeg.h> 
 extern "C" {
 
 // Dummy custom filter for testing
