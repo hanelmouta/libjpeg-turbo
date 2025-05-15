@@ -1,23 +1,23 @@
-#include <stdio.h>  // Add this line
-#include "jpeglib.h"
+#include <csetjmp>
 #include <cstddef>
 #include <cstdint>
-#include <csetjmp>
-
+#include <cstdio>
+#include "jpeglib.h"
 
 struct my_error_mgr {
     struct jpeg_error_mgr pub;    // "public" fields
-    jmp_buf setjmp_buffer;        // pour gérer erreurs sans exit
+    jmp_buf setjmp_buffer;        // buffer pour gestion erreurs sans exit
 };
 
 METHODDEF(void) my_error_exit(j_common_ptr cinfo) {
     my_error_mgr* myerr = (my_error_mgr*) cinfo->err;
-    (*cinfo->err->output_message)(cinfo); // affiche message erreur (optionnel)
+    // Affiche le message d'erreur (optionnel)
+    (*cinfo->err->output_message)(cinfo);
     longjmp(myerr->setjmp_buffer, 1);
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (size < 4)  // Ignore trop petites entrées
+    if (size < 4)  // Ignore les entrées trop petites
         return 0;
 
     struct jpeg_decompress_struct cinfo;
@@ -27,7 +27,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     jerr.pub.error_exit = my_error_exit;
 
     if (setjmp(jerr.setjmp_buffer)) {
-        // Gestion d'erreur libjpeg : on nettoie et sort proprement
+        // Gestion d'erreur : nettoyage et sortie propre
         jpeg_destroy_decompress(&cinfo);
         return 0;
     }
