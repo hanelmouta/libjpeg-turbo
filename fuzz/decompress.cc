@@ -1,4 +1,3 @@
-
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -16,29 +15,59 @@ METHODDEF(void) my_error_exit(j_common_ptr cinfo) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (size < 4) { // Skip small inputs
+    if (size < 64) { // Skip inputs smaller than a single 8x8 block
         return 0;
     }
 
-    struct jpeg_decompress_struct cinfo;
+    struct jpeg_compress_struct cinfo;
     struct my_error_mgr jerr;
 
     cinfo.err = jpeg_std_error(&jerr.pub);
     jerr.pub.error_exit = my_error_exit;
 
     if (setjmp(jerr.setjmp_buffer)) {
-        jpeg_destroy_decompress(&cinfo);
+        jpeg_destroy_compress(&cinfo);
         return 0;
     }
 
-    jpeg_Create_Decompress(&cinfo);
-    jpeg_mem_src(&cinfo, data, size);
+    jpeg_create_compress(&cinfo);
 
-  
-    if (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK) {
-        jpeg_save_markers(&cinfo, JPEG_APP0 + 0xDB, 0xFFFF); // Save marker 0xDB
+    // Set up a dummy destination manager
+    unsigned char dummy_output[1024];
+    struct jpeg_destination_mgr dest_mgr;
+    dest_mgr.init_destination = [](j_compress_ptr cinfo) {};
+    dest_mgr.empty_output_buffer = [](j_compress_ptr cinfo) -> boolean { return TRUE; };
+    dest_mgr.term_destination = [](j_compress_ptr cinfo) {};
+    dest_mgr.next_output_byte = dummy_output;
+    dest_mgr.free_in_buffer = sizeof(dummy_output);
+    cinfo.dest = &dest_mgr;
+
+    // Set up compression parameters
+    cinfo.image_width = 8;  // Width of one block
+    cinfo.image_height = 8; // Height of one block
+    cinfo.input_components = 1; // Grayscale
+    cinfo.in_color_space = JCS_GRAYSCALE;
+    jpeg_set_defaults(&cinfo);
+
+    // Start compression
+    jpeg_start_compress(&cinfo, TRUE);
+
+    // Prepare a single 8x8 block of data
+    JSAMPLE row[8];
+    JSAMPROW row_pointer[1];
+    for (int i = 0; i < 8; ++i) {
+        row[i] = data[i % size]; // Fill row with fuzzed data
+    }
+    row_pointer[0] = row;
+
+    // Write the block (indirectly calls `encode_one_block`)
+    for (int i = 0; i < 8; ++i) {
+        jpeg_write_scanlines(&cinfo, row_pointer, 1);
     }
 
-    jpeg_destroy_decompress(&cinfo);
+    // Finish compression
+    jpeg_finish_compress(&cinfo);
+    jpeg_destroy_compress(&cinfo);
+
     return 0;
 }
