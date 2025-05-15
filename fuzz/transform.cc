@@ -5,6 +5,11 @@
  * modification, are permitted.
  */
 
+extern "C" {
+#include <jpeglib.h>
+#include <jtransform.h>
+}
+
 #include <turbojpeg.h>
 #include <stdlib.h>
 #include <stdint.h>
