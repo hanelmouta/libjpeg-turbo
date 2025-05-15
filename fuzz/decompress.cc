@@ -1,7 +1,9 @@
+#include <stdio.h>  // Add this line
+#include "jpeglib.h"
 #include <cstddef>
 #include <cstdint>
 #include <csetjmp>
-#include "jpeglib.h"
+
 
 struct my_error_mgr {
     struct jpeg_error_mgr pub;    // "public" fields
