@@ -31,10 +31,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         return 0;
     }
 
-    jpeg_create_decompress(&cinfo);
+    jpeg_Create_Decompress(&cinfo);
     jpeg_mem_src(&cinfo, data, size);
 
-    // Read the JPEG header, which will invoke `read_marker` internally
+  
     if (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK) {
         jpeg_save_markers(&cinfo, JPEG_APP0 + 0xDB, 0xFFFF); // Save marker 0xDB
     }
